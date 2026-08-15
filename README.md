@@ -78,4 +78,5 @@ O deploy foi feito a partir do GitHub para uma **VPS**, onde rodam tanto o backe
 ## Licença
 
 ![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=for-the-badge)
+
 Este projeto está licenciado sob a [Licença MIT](LICENSE).
