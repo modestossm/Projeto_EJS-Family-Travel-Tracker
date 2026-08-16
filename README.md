@@ -44,20 +44,20 @@ Aplicação web para rastrear quais países cada membro da família já visitou.
     ```sql
     CREATE TABLE users (
       id SERIAL PRIMARY KEY,
-      name VARCHAR(255),
-      color VARCHAR(50)
+      name VARCHAR(15) NOT NULL UNIQUE,
+      color VARCHAR(15) NOT NULL
     );
 
     CREATE TABLE countries (
       id SERIAL PRIMARY KEY,
-      country_code VARCHAR(2),
-      country_name VARCHAR(100)
+      country_code VARCHAR(2) NOT NULL,
+      country_name VARCHAR(100) NOT NULL
     );
 
     CREATE TABLE visited_countries (
       id SERIAL PRIMARY KEY,
-      country_code VARCHAR(2),
-      user_id INTEGER REFERENCES users(id)
+      country_code VARCHAR(2) NOT NULL,
+      user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE
     );
     ```
 
