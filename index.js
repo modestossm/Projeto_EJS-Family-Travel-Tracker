@@ -21,7 +21,7 @@ db.connect();
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(express.static("public"));
 
-let currentUserId = 1;
+let currentUserId = null;
 let users = [];
 
 async function checkVisisted() {
@@ -31,20 +31,29 @@ async function checkVisisted() {
 }
 
 async function getCurrentUser() {
-  const result = await db.query("SELECT * FROM users");
+  const result = await db.query("SELECT * FROM users ORDER BY id");
   users = result.rows;
-  return users.find((user) => user.id == currentUserId);
+
+  let currentUser = users.find((user) => user.id == currentUserId);
+
+  if (!currentUser && users.length > 0) {
+    currentUser = users[0];
+    currentUserId = currentUser.id;
+  }
+
+  return currentUser;
 }
 
 app.get("/", async (req, res) => {
-  const countries = await checkVisisted();
   const currentUser = await getCurrentUser();
 
-  if (!currentUser) {
+  if (users.length === 0) {
     return res.render("new.ejs", {
-      error: "Cadastre o primeiro membro da família para começar.",
+      error: "Cadastre o primeiro membro da família para começar!",
     });
   }
+
+  const countries = await checkVisisted();
 
   res.render("index.ejs", {
     countries: countries,
