@@ -47,11 +47,20 @@ app.get("/", async (req, res) => {
   const countries = await checkVisisted();
   const currentUser = await getCurrentUser();
 
+  if (!currentUser) {
+    return res.render("new.ejs", {
+      error: "Cadastre o primeiro membro da família para começar.",
+    });
+  }
+
   res.render("index.ejs", {
     countries: countries,
     total: countries.length,
     users: users,
     color: currentUser.color,
+    error: req.query.error === "last-user"
+      ? "Mantenha pelo menos um membro da família."
+      : null,
   });
 });
 
@@ -124,11 +133,17 @@ app.post("/new", async (req, res) => {
 app.post("/delete", async (req, res) => {
   const userId = req.body.userId;
 
+  const countResult = await db.query("SELECT COUNT(*)::int AS count FROM users");
+  if (countResult.rows[0].count <= 1) {
+    return res.redirect("/?error=last-user");
+  }
+
   await db.query("DELETE FROM visited_countries WHERE user_id = $1", [userId]);
   await db.query("DELETE FROM users WHERE id = $1", [userId]);
 
   if (currentUserId == userId) {
-    currentUserId = 1;
+    const nextUser = await db.query("SELECT id FROM users ORDER BY id LIMIT 1");
+    currentUserId = nextUser.rows[0].id;
   }
 
   res.redirect("/");

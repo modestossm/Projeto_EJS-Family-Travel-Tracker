@@ -30,6 +30,10 @@
     </form>
   </div>
 
+  <% if (locals.error) { %>
+    <p class="page-error"><%= error %></p>
+  <% } %>
+
   <form action="/add" method="post">
     <input type="text" name="country" autofocus placeholder="<%= locals.error ? error :  'Enter country name'%>">
     <button type="submit" style="background-color: <%= color %>;">Add</button>

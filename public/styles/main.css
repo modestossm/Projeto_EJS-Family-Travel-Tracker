@@ -143,6 +143,12 @@ button {
   line-height: 49px;
 }
 
+.page-error {
+  margin: 8px 0;
+  color: #ff6b6b;
+  font-weight: bold;
+}
+
 .total-count {
   font-family: "Roboto", sans-serif;
   color: white;
