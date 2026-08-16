@@ -103,8 +103,20 @@ app.post("/user", async (req, res) => {
 app.post("/new", async (req, res) => {
   const name = req.body.name?.trim();
   const color = req.body.color;
+  const validColors = [
+    "#ff4500",
+    "#21ba45",
+    "#fbbd08",
+    "#b5cc18",
+    "#f2711c",
+    "#00b5ad",
+    "#2185d0",
+    "#6435c9",
+    "#a333c8",
+    "#e03997",
+  ];
 
-  if (!name || name.length > 15 || !color) {
+  if (!name || name.length > 15 || !validColors.includes(color)) {
     return res.status(400).render("new.ejs", {
       error: "Informe um nome de até 15 caracteres e selecione uma cor.",
     });
