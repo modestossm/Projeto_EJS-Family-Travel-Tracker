@@ -52,33 +52,49 @@ app.get("/", async (req, res) => {
     users: users,
     color: currentUser.color,
     error: req.query.error === "last-user"
-      ? "Mantenha pelo menos um membro da família."
-      : null,
+      ? "Mantenha pelo menos um membro da família!"
+      : req.query.error === "country-not-found"
+        ? "Não encontramos um país com esse nome ou código. Verifique se digitou corretamente."
+        : null,
   });
 });
 
 app.post("/add", async (req, res) => {
-  const input = req.body["country"];
+  const input = req.body["country"]?.trim();
+
+  if (!input) {
+    return res.redirect("/?error=country-not-found");
+  }
 
   try {
     const result = await db.query(
-      "SELECT country_code FROM countries WHERE LOWER(country_name) LIKE '%' || $1 || '%';",
-      [input.toLowerCase()]
+      `SELECT country_code
+       FROM countries
+       WHERE UPPER(country_code) = UPPER($1)
+          OR LOWER(country_name) LIKE '%' || LOWER($1) || '%'
+       ORDER BY CASE
+         WHEN UPPER(country_code) = UPPER($1) THEN 0
+         ELSE 1
+       END, country_name
+       LIMIT 1;`,
+      [input]
     );
+
+    if (result.rows.length === 0) {
+      return res.redirect("/?error=country-not-found");
+    }
 
     const data = result.rows[0];
     const countryCode = data.country_code;
-    try {
-      await db.query(
-        "INSERT INTO visited_countries (country_code, user_id) VALUES ($1, $2)",
-        [countryCode, currentUserId]
-      );
-      res.redirect("/");
-    } catch (err) {
-      console.log(err);
-    }
+
+    await db.query(
+      "INSERT INTO visited_countries (country_code, user_id) VALUES ($1, $2)",
+      [countryCode, currentUserId]
+    );
+    res.redirect("/");
   } catch (err) {
     console.log(err);
+    res.redirect("/");
   }
 });
 
@@ -110,7 +126,7 @@ app.post("/new", async (req, res) => {
 
   if (!name || name.length > 15 || !validColors.includes(color)) {
     return res.status(400).render("new.ejs", {
-      error: "Informe um nome de até 15 caracteres e selecione uma cor.",
+      error: "Informe um nome de até 15 caracteres e selecione uma cor!",
     });
   }
 
@@ -126,7 +142,7 @@ app.post("/new", async (req, res) => {
     console.log(err);
     const error = err.code === "23505"
       ? "Já existe um membro com esse nome."
-      : "Não foi possível adicionar o membro.";
+      : "Não foi possível adicionar!";
 
     return res.status(400).render("new.ejs", { error });
   }
