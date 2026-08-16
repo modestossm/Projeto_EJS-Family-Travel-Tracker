@@ -19,7 +19,7 @@ Aplicação web para rastrear quais países cada membro da família já visitou.
 - **Backend:** Node.js, Express
 - **Frontend:** Templates EJS, CSS
 - **Banco de dados:** PostgreSQL
-- **Dependências:** `pg`, `body-parser`, `dotenv`, `ejs`
+- **Dependências:** `pg`, `body-parser`, `ejs`
 
 ## Configuração
 
@@ -29,7 +29,7 @@ Aplicação web para rastrear quais países cada membro da família já visitou.
     npm install
     ```
 
-2.  Crie um arquivo `.env` com as credenciais do PostgreSQL:
+2.  Configure as variáveis de ambiente com as credenciais do PostgreSQL:
 
     ```env
     DB_USER=seu_usuario

@@ -22,18 +22,11 @@ app.use(bodyParser.urlencoded({ extended: true }));
 app.use(express.static("public"));
 
 let currentUserId = 1;
-
-let users = [
-  { id: 1, name: "Angela", color: "teal" },
-  { id: 2, name: "Jack", color: "powderblue" },
-];
+let users = [];
 
 async function checkVisisted() {
-  const result = await db.query("SELECT country_code FROM visited_countries JOIN users ON users.id = user_id WHERE user_id = $1; ", [currentUserId]);
-  let countries = [];
-  result.rows.forEach((country) => {
-    countries.push(country.country_code);
-  });
+  const result = await db.query("SELECT country_code FROM visited_countries WHERE user_id = $1;", [currentUserId]);
+  const countries = result.rows.map((country) => country.country_code);
   return countries;
 }
 
@@ -66,7 +59,6 @@ app.get("/", async (req, res) => {
 
 app.post("/add", async (req, res) => {
   const input = req.body["country"];
-  const currentUser = await getCurrentUser();
 
   try {
     const result = await db.query(
@@ -90,12 +82,12 @@ app.post("/add", async (req, res) => {
   }
 });
 
-app.post("/user", async (req, res) => {
+app.post("/user", (req, res) => {
   if (req.body.add === "new") {
     res.render("new.ejs");
   } else {
     currentUserId = req.body.user;
-    console.log(req.body);
+    // console.log(req.body);
     res.redirect("/");
   }
 });
