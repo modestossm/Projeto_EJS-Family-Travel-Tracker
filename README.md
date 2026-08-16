@@ -4,6 +4,7 @@
 ![Express](https://img.shields.io/badge/Express-000000?style=for-the-badge&logo=express&logoColor=white)
 ![EJS](https://img.shields.io/badge/EJS-B4B4B4?style=for-the-badge&logo=ejs&logoColor=black)
 ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-4169E1?style=for-the-badge&logo=postgresql&logoColor=white)
+![Docker](https://img.shields.io/badge/Docker-2496ED?style=for-the-badge&logo=docker&logoColor=white)
 
 Aplicação web para rastrear quais países cada membro da família já visitou. Construída com **Node.js**, **Express**, **EJS** e **PostgreSQL**.
 
