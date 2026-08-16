@@ -94,6 +94,55 @@ button {
   cursor: pointer;
 }
 
+.member-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: stretch;
+  gap: 0;
+  background: #21252b;
+}
+
+.member-control,
+.member-select-form,
+.member-delete-form,
+.member-add-form {
+  display: inline-flex;
+  align-items: stretch;
+  margin: 0;
+}
+
+.member-select,
+.member-add {
+  width: auto;
+  min-height: 49px;
+  margin: 0;
+  padding: 0 20px;
+  border: 0;
+  border-radius: 0;
+  color: #000;
+  font-size: 13px;
+  line-height: 49px;
+  text-transform: none;
+}
+
+.member-select:hover,
+.member-add:hover {
+  filter: brightness(1.1);
+}
+
+.member-delete {
+  width: auto;
+  min-height: 49px;
+  margin: 0;
+  padding: 0 10px;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  color: red;
+  font-size: 18px;
+  line-height: 49px;
+}
+
 .total-count {
   font-family: "Roboto", sans-serif;
   color: white;

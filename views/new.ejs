@@ -11,12 +11,15 @@
 
 <body>
   <h1>Add a Family Member</h1>
+  <% if (locals.error) { %>
+    <p class="form-error"><%= error %></p>
+  <% } %>
   <form action="/new" method="post">
     <p>What's your name?</p>
-    <input type="text" name="name">
+    <input type="text" name="name" maxlength="15" required>
 
     <p>Pick a color:</p>
-    <input type="radio" name="color" id="red" value="orangered" />
+    <input type="radio" name="color" id="red" value="orangered" required />
     <label for="red"><span class="red"></span></label>
 
     <input type="radio" name="color" id="green" value="green" />

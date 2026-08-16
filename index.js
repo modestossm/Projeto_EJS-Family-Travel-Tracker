@@ -92,8 +92,14 @@ app.post("/user", async (req, res) => {
 });
 
 app.post("/new", async (req, res) => {
-  const name = req.body.name;
+  const name = req.body.name?.trim();
   const color = req.body.color;
+
+  if (!name || name.length > 15 || !color) {
+    return res.status(400).render("new.ejs", {
+      error: "Informe um nome de até 15 caracteres e selecione uma cor.",
+    });
+  }
 
   try {
     const result = await db.query(
@@ -105,6 +111,11 @@ app.post("/new", async (req, res) => {
     currentUserId = id;
   } catch (err) {
     console.log(err);
+    const error = err.code === "23505"
+      ? "Já existe um membro com esse nome."
+      : "Não foi possível adicionar o membro.";
+
+    return res.status(400).render("new.ejs", { error });
   }
 
   res.redirect("/");

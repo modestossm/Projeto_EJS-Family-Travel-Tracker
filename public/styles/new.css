@@ -92,3 +92,7 @@ label span.purple {
 label span.pink {
   background: #e03997;
 }
+.form-error {
+  color: #ff6b6b;
+  font-weight: bold;
+}

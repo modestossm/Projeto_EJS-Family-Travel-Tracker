@@ -9,21 +9,26 @@
 </head>
 
 <body>
-  <form class="tab-view tab-view-height-auto" action="/user" method="post">
+  <div class="member-bar">
     <% users.forEach(function(user) { %>
-      <input type="submit" name="user" value="<%= user.id %>" id="<%= user.id %>">
-      <label for="<%= user.id %>" style="background-color: <%= user.color %>;">
-        <%= user.name %>
-      </label>
-      <form action="/delete" method="post" style="display:inline">
-        <input type="hidden" name="userId" value="<%= user.id %>">
-        <button type="submit" style="background:none; border:none; cursor:pointer; color:red; font-size:18px;">&times;</button>
-      </form>
-      <% }); %>
+      <div class="member-control">
+        <form action="/user" method="post" class="member-select-form">
+          <button type="submit" name="user" value="<%= user.id %>" class="member-select"
+            style="background-color: <%= user.color %>;">
+            <%= user.name %>
+          </button>
+        </form>
+        <form action="/delete" method="post" class="member-delete-form">
+          <input type="hidden" name="userId" value="<%= user.id %>">
+          <button type="submit" class="member-delete" aria-label="Delete <%= user.name %>">&times;</button>
+        </form>
+      </div>
+    <% }); %>
 
-      <input type="submit" name="add" value="new" id="tab">
-      <label for="tab">Add Family Member</label>
-  </form>
+    <form action="/user" method="post" class="member-add-form">
+      <button type="submit" name="add" value="new" class="member-add">Add Family Member</button>
+    </form>
+  </div>
 
   <form action="/add" method="post">
     <input type="text" name="country" autofocus placeholder="<%= locals.error ? error :  'Enter country name'%>">
