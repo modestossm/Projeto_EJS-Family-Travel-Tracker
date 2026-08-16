@@ -95,13 +95,17 @@ app.post("/new", async (req, res) => {
   const name = req.body.name;
   const color = req.body.color;
 
-  const result = await db.query(
-    "INSERT INTO users (name, color) VALUES($1, $2) RETURNING *;",
-    [name, color]
-  );
+  try {
+    const result = await db.query(
+      "INSERT INTO users (name, color) VALUES($1, $2) RETURNING *;",
+      [name, color]
+    );
 
-  const id = result.rows[0].id;
-  currentUserId = id;
+    const id = result.rows[0].id;
+    currentUserId = id;
+  } catch (err) {
+    console.log(err);
+  }
 
   res.redirect("/");
 });
