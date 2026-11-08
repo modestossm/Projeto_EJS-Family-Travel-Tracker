@@ -12,16 +12,15 @@
 <body>
   <div class="member-bar">
     <% users.forEach(function(user) { %>
-      <div class="member-control">
+      <div class="member-control" style="--member-color: <%= user.color %>;" data-member-name="<%= user.name %>">
         <form action="/user" method="post" class="member-select-form">
-          <button type="submit" name="user" value="<%= user.id %>" class="member-select"
-            style="background-color: <%= user.color %>;">
+          <button type="submit" name="user" value="<%= user.id %>" class="member-select">
             <%= user.name %>
           </button>
         </form>
         <form action="/delete" method="post" class="member-delete-form">
           <input type="hidden" name="userId" value="<%= user.id %>">
-          <button type="submit" class="member-delete" aria-label="Delete <%= user.name %>">&times;</button>
+          <button type="button" class="member-delete" aria-label="Excluir <%= user.name %>" title="Excluir membro">&times;</button>
         </form>
       </div>
     <% }); %>
@@ -400,6 +399,19 @@
 
   <h2 class="total-count">Total Countries: <span id="visited-count"><%= total %></span></h2>
 
+  <div class="confirm-overlay" id="confirm-overlay" hidden aria-hidden="true">
+    <section class="confirm-dialog" role="dialog" aria-modal="true" aria-labelledby="confirm-title" aria-describedby="confirm-message">
+      <h2 class="confirm-title" id="confirm-title">Confirmar ação</h2>
+      <p class="confirm-message" id="confirm-message"></p>
+      <div class="confirm-actions">
+        <button type="button" class="confirm-cancel" id="confirm-cancel">Cancelar</button>
+        <button type="button" class="confirm-submit" id="confirm-submit">Confirmar</button>
+      </div>
+    </section>
+  </div>
+
+  <div class="action-notice" id="action-notice" role="status" aria-live="polite"></div>
+
   <script>
     const country_codes = "<%= countries %>".split(",").filter(code => code.trim());
     const visitedCountryCodes = new Set(country_codes);
@@ -465,17 +477,80 @@
       countryTooltip.setAttribute("aria-hidden", "true");
     }
 
+    const confirmationOverlay = document.getElementById("confirm-overlay");
+    const confirmationDialog = confirmationOverlay.querySelector(".confirm-dialog");
+    const confirmationTitle = document.getElementById("confirm-title");
+    const confirmationMessage = document.getElementById("confirm-message");
+    const confirmationCancel = document.getElementById("confirm-cancel");
+    const confirmationSubmit = document.getElementById("confirm-submit");
+    const actionNotice = document.getElementById("action-notice");
+    let pendingConfirmationAction = null;
+    let lastConfirmationTrigger = null;
+    let actionNoticeTimeout;
+
+    function openConfirmation({ title, message, confirmLabel }, action, trigger) {
+      confirmationTitle.textContent = title;
+      confirmationMessage.textContent = message;
+      confirmationSubmit.textContent = confirmLabel;
+      pendingConfirmationAction = action;
+      lastConfirmationTrigger = trigger;
+      hideCountryTooltip();
+      confirmationOverlay.hidden = false;
+      confirmationOverlay.setAttribute("aria-hidden", "false");
+      confirmationCancel.focus();
+    }
+
+    function closeConfirmation() {
+      confirmationOverlay.hidden = true;
+      confirmationOverlay.setAttribute("aria-hidden", "true");
+      const trigger = lastConfirmationTrigger;
+      pendingConfirmationAction = null;
+      lastConfirmationTrigger = null;
+      if (trigger?.isConnected && typeof trigger.focus === "function") trigger.focus();
+    }
+
+    function showActionNotice(message, isError = false) {
+      actionNotice.textContent = message;
+      actionNotice.classList.toggle("is-error", isError);
+      actionNotice.classList.add("is-visible");
+      window.clearTimeout(actionNoticeTimeout);
+      actionNoticeTimeout = window.setTimeout(() => {
+        actionNotice.classList.remove("is-visible");
+      }, 3200);
+    }
+
+    confirmationCancel.addEventListener("click", closeConfirmation);
+    confirmationSubmit.addEventListener("click", async () => {
+      const action = pendingConfirmationAction;
+      closeConfirmation();
+      if (typeof action === "function") await action();
+    });
+    confirmationOverlay.addEventListener("click", event => {
+      if (event.target === confirmationOverlay) closeConfirmation();
+    });
+    confirmationDialog.addEventListener("keydown", event => {
+      if (event.key !== "Tab") return;
+      const focusable = [...confirmationDialog.querySelectorAll("button:not([disabled])")];
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault();
+        first.focus();
+      }
+    });
+    document.addEventListener("keydown", event => {
+      if (event.key === "Escape" && !confirmationOverlay.hidden) closeConfirmation();
+    });
+
     const pendingCountryDeletes = new Set();
 
     async function removeVisitedCountry(country) {
       if (!visitedCountryCodes.has(country.id) || pendingCountryDeletes.has(country.id)) return;
 
       const name = country.getAttribute("title") || country.id;
-      const confirmed = window.confirm(
-        `Remover ${name} (${country.id}) dos países visitados do membro atual?`
-      );
-      if (!confirmed) return;
-
       pendingCountryDeletes.add(country.id);
       country.classList.add("is-removing");
 
@@ -502,14 +577,43 @@
         localVisitedTotal = Math.max(0, localVisitedTotal - deletedEntries);
         visitedCount.textContent = localVisitedTotal;
         hideCountryTooltip();
+        showActionNotice(`${name} foi removido do perfil atual.`);
       } catch (error) {
         console.error("Erro ao remover país visitado:", error);
-        window.alert(error.message || "Não foi possível remover o país. Tente novamente.");
+        showActionNotice(error.message || "Não foi possível remover o país. Tente novamente.", true);
       } finally {
         pendingCountryDeletes.delete(country.id);
         country.classList.remove("is-removing");
       }
     }
+
+    function requestCountryRemoval(country, trigger) {
+      if (!visitedCountryCodes.has(country.id) || pendingCountryDeletes.has(country.id)) return;
+
+      const name = country.getAttribute("title") || country.id;
+      openConfirmation({
+        title: "Remover país visitado?",
+        message: `Remover ${name} (${country.id}) da lista de países visitados do membro atual?`,
+        confirmLabel: "Remover país",
+      }, () => removeVisitedCountry(country), trigger);
+    }
+
+    document.querySelectorAll(".member-delete").forEach(deleteButton => {
+      deleteButton.addEventListener("click", event => {
+        event.preventDefault();
+        event.stopPropagation();
+
+        const memberControl = deleteButton.closest(".member-control");
+        const deleteForm = deleteButton.closest("form");
+        const memberName = memberControl.dataset.memberName;
+
+        openConfirmation({
+          title: "Excluir membro?",
+          message: `Excluir ${memberName}? Os países visitados associados a este membro também serão removidos.`,
+          confirmLabel: "Excluir membro",
+        }, () => deleteForm.submit(), deleteButton);
+      });
+    });
 
     const labelOffsets = {
       US: { x: 48, y: 44 },
@@ -528,7 +632,7 @@
       if (!bounds.width || !bounds.height) return;
 
       if (visitedCountryCodes.has(country.id) && hasDesktopHover) {
-        country.addEventListener("click", () => removeVisitedCountry(country));
+        country.addEventListener("click", () => requestCountryRemoval(country, country));
       }
 
       const isSmallCountry = bounds.width * bounds.height <= smallCountryAreaLimit;

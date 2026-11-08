@@ -219,27 +219,54 @@ button {
   background: transparent;
 }
 
-.member-control,
+.member-control {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  min-height: 40px;
+  padding: 3px 4px 3px 5px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 999px;
+  background: var(--member-color, #2185d0);
+  transition: filter 0.15s ease, border-color 0.15s ease;
+}
+
+.member-control:hover {
+  filter: brightness(1.06);
+}
+
 .member-select-form,
 .member-delete-form,
 .member-add-form {
   display: inline-flex;
-  align-items: stretch;
+  align-items: center;
   margin: 0;
 }
 
 .member-select,
 .member-add {
   width: auto;
-  min-height: 49px;
+  min-height: 34px;
   margin: 0;
-  padding: 0 20px;
+  padding: 0 12px;
   border: 0;
-  border-radius: 0;
-  color: #000;
+  border-radius: 999px;
+  color: #101820;
   font-size: 13px;
-  line-height: 49px;
+  line-height: 1;
   text-transform: none;
+}
+
+.member-select {
+  background: transparent;
+}
+
+.member-add {
+  min-height: 40px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 6px;
+  background: #343a44;
+  color: #f4f5f7;
 }
 
 .member-select:hover,
@@ -248,16 +275,143 @@ button {
 }
 
 .member-delete {
-  width: auto;
-  min-height: 49px;
+  display: grid;
+  width: 25px;
+  height: 25px;
+  flex: 0 0 25px;
+  place-items: center;
   margin: 0;
-  padding: 0 10px;
-  border: 0;
-  border-radius: 0;
-  background: transparent;
-  color: red;
+  padding: 0;
+  border: 1px solid transparent;
+  border-radius: 50%;
+  background: rgba(17, 22, 29, 0.2);
+  color: #fff;
+  cursor: pointer;
+  font-size: 17px;
+  line-height: 1;
+  opacity: 0;
+  pointer-events: none;
+  transform: scale(0.82);
+  transition: opacity 0.14s ease, transform 0.14s ease, background 0.14s ease;
+}
+
+.member-control:hover .member-delete,
+.member-control:focus-within .member-delete {
+  opacity: 1;
+  pointer-events: auto;
+  transform: scale(1);
+}
+
+.member-delete:hover {
+  background: #c93b50;
+}
+
+.member-select:focus-visible,
+.member-delete:focus-visible,
+.member-add:focus-visible,
+.confirm-actions button:focus-visible {
+  outline: 2px solid #f4f5f7;
+  outline-offset: 2px;
+}
+
+.confirm-overlay {
+  position: fixed;
+  z-index: 1200;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: 20px;
+  background: rgba(7, 10, 14, 0.68);
+  backdrop-filter: blur(2px);
+}
+
+.confirm-overlay[hidden] {
+  display: none;
+}
+
+.confirm-dialog {
+  width: min(420px, 100%);
+  padding: 22px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 10px;
+  background: #2b3038;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.45);
+  color: #f4f5f7;
+}
+
+.confirm-title {
+  margin: 0 0 9px;
   font-size: 18px;
-  line-height: 49px;
+}
+
+.confirm-message {
+  margin: 0;
+  color: #adb5c0;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.confirm-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 18px;
+  padding-top: 14px;
+  border-top: 1px solid rgba(255, 255, 255, 0.09);
+}
+
+.confirm-actions button {
+  min-height: 36px;
+  margin: 0;
+  padding: 0 13px;
+  border: 0;
+  border-radius: 5px;
+  font-size: 13px;
+  font-weight: 700;
+  text-transform: none;
+}
+
+.confirm-cancel {
+  background: #414853;
+  color: #f4f5f7;
+}
+
+.confirm-submit {
+  background: #d64259;
+  color: #fff;
+}
+
+.confirm-actions button:hover {
+  filter: brightness(1.1);
+}
+
+.action-notice {
+  position: fixed;
+  z-index: 1100;
+  bottom: 20px;
+  left: 50%;
+  max-width: calc(100vw - 32px);
+  padding: 9px 13px;
+  border: 1px solid rgba(255, 255, 255, 0.13);
+  border-radius: 5px;
+  background: #303640;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.24);
+  color: #f4f5f7;
+  font-size: 12px;
+  opacity: 0;
+  pointer-events: none;
+  transform: translate(-50%, 8px);
+  transition: opacity 0.18s ease, transform 0.18s ease;
+}
+
+.action-notice.is-visible {
+  opacity: 1;
+  transform: translate(-50%, 0);
+}
+
+.action-notice.is-error {
+  border-color: rgba(255, 113, 135, 0.35);
+  background: #512e37;
 }
 
 .page-error {
