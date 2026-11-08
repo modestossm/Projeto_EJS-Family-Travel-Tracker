@@ -19,6 +19,7 @@ const db = new pg.Client({
 db.connect();
 
 app.use(bodyParser.urlencoded({ extended: true }));
+app.use(express.json());
 app.use(express.static("public"));
 
 let currentUserId = null;
@@ -104,6 +105,37 @@ app.post("/add", async (req, res) => {
   } catch (err) {
     console.log(err);
     res.redirect("/");
+  }
+});
+
+app.post("/delete-country", async (req, res) => {
+  const countryCode = typeof req.body?.countryCode === "string"
+    ? req.body.countryCode.trim().toUpperCase()
+    : "";
+
+  if (!/^[A-Z]{2}$/.test(countryCode)) {
+    return res.status(400).json({ error: "Código de país inválido." });
+  }
+
+  if (currentUserId == null) {
+    return res.status(409).json({ error: "Selecione um membro antes de remover um país." });
+  }
+
+  try {
+    const result = await db.query(
+      `DELETE FROM visited_countries
+       WHERE user_id = $1 AND UPPER(country_code) = $2;`,
+      [currentUserId, countryCode]
+    );
+
+    if (result.rowCount === 0) {
+      return res.status(404).json({ error: "Este país não está na lista do membro atual." });
+    }
+
+    return res.json({ deletedCount: result.rowCount });
+  } catch (err) {
+    console.error("Erro ao remover país visitado:", err);
+    return res.status(500).json({ error: "Não foi possível remover o país. Tente novamente." });
   }
 });
 

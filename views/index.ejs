@@ -35,7 +35,7 @@
     <p class="page-error"><%= error %></p>
   <% } %>
 
-  <form action="/add" method="post">
+  <form action="/add" method="post" class="country-form">
     <input type="text" name="country" autofocus placeholder="<%= locals.error ? error :  'Enter country name'%>">
     <button type="submit" style="background-color: <%= color %>;">Add</button>
   </form>
@@ -398,15 +398,181 @@
     </svg>
   </section>
 
-  <h2 class="total-count">Total Countries: <%=total%> </h2>
+  <h2 class="total-count">Total Countries: <span id="visited-count"><%= total %></span></h2>
 
   <script>
-    const country_codes = "<%= countries %>".split(",");
-    console.log(typeof ("<%= countries %>"));
+    const country_codes = "<%= countries %>".split(",").filter(code => code.trim());
+    const visitedCountryCodes = new Set(country_codes);
+    const visitedCount = document.getElementById("visited-count");
+    let localVisitedTotal = Number(visitedCount.textContent);
 
-    country_codes.forEach(code => {
+    visitedCountryCodes.forEach(code => {
       const el = document.getElementById(code);
-      if (el) el.style.fill = "<%= color %>";
+      if (el) {
+        el.style.fill = "<%= color %>";
+        el.classList.add("is-visited");
+      }
+    });
+
+    const svg = document.querySelector(".ag-canvas_svg");
+    const labelLayer = document.createElementNS(svg.namespaceURI, "g");
+    labelLayer.setAttribute("class", "country-labels");
+    labelLayer.setAttribute("aria-hidden", "true");
+    svg.appendChild(labelLayer);
+
+    const frenchGuiana = svg.querySelector("#GF");
+    const frenchGuianaBounds = frenchGuiana?.getBBox();
+    const smallCountryAreaLimit = frenchGuianaBounds
+      ? frenchGuianaBounds.width * frenchGuianaBounds.height
+      : 0;
+    const hasDesktopHover = window.matchMedia("(hover: hover) and (pointer: fine)").matches;
+    const countryTooltip = document.createElement("div");
+    countryTooltip.className = "country-tooltip";
+    countryTooltip.setAttribute("role", "tooltip");
+    countryTooltip.setAttribute("aria-hidden", "true");
+    document.body.appendChild(countryTooltip);
+
+    function positionCountryTooltip(event) {
+      const gap = 12;
+      const margin = 8;
+      let left = event.clientX + gap;
+      let top = event.clientY + gap;
+
+      if (left + countryTooltip.offsetWidth > window.innerWidth - margin) {
+        left = event.clientX - countryTooltip.offsetWidth - gap;
+      }
+      if (top + countryTooltip.offsetHeight > window.innerHeight - margin) {
+        top = event.clientY - countryTooltip.offsetHeight - gap;
+      }
+
+      countryTooltip.style.left = `${Math.max(margin, left)}px`;
+      countryTooltip.style.top = `${Math.max(margin, top)}px`;
+    }
+
+    function showCountryTooltip(country, event) {
+      const name = country.getAttribute("title") || country.id;
+      const removeHint = visitedCountryCodes.has(country.id)
+        ? "\nClique para remover do perfil atual"
+        : "";
+      countryTooltip.textContent = `${country.id} — ${name}${removeHint}`;
+      countryTooltip.classList.add("is-visible");
+      countryTooltip.setAttribute("aria-hidden", "false");
+      positionCountryTooltip(event);
+    }
+
+    function hideCountryTooltip() {
+      countryTooltip.classList.remove("is-visible");
+      countryTooltip.setAttribute("aria-hidden", "true");
+    }
+
+    const pendingCountryDeletes = new Set();
+
+    async function removeVisitedCountry(country) {
+      if (!visitedCountryCodes.has(country.id) || pendingCountryDeletes.has(country.id)) return;
+
+      const name = country.getAttribute("title") || country.id;
+      const confirmed = window.confirm(
+        `Remover ${name} (${country.id}) dos países visitados do membro atual?`
+      );
+      if (!confirmed) return;
+
+      pendingCountryDeletes.add(country.id);
+      country.classList.add("is-removing");
+
+      try {
+        const response = await fetch("/delete-country", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ countryCode: country.id }),
+        });
+        const result = await response.json().catch(() => ({}));
+
+        if (!response.ok) {
+          throw new Error(result.error || "Não foi possível remover o país.");
+        }
+
+        const deletedEntries = Number(result.deletedCount);
+        if (!Number.isInteger(deletedEntries) || deletedEntries < 1) {
+          throw new Error("O servidor não confirmou a remoção do país.");
+        }
+
+        visitedCountryCodes.delete(country.id);
+        country.classList.remove("is-visited");
+        country.style.removeProperty("fill");
+        localVisitedTotal = Math.max(0, localVisitedTotal - deletedEntries);
+        visitedCount.textContent = localVisitedTotal;
+        hideCountryTooltip();
+      } catch (error) {
+        console.error("Erro ao remover país visitado:", error);
+        window.alert(error.message || "Não foi possível remover o país. Tente novamente.");
+      } finally {
+        pendingCountryDeletes.delete(country.id);
+        country.classList.remove("is-removing");
+      }
+    }
+
+    const labelOffsets = {
+      US: { x: 48, y: 44 },
+      CA: { x: -24, y: 77 },
+      NO: { x: -12, y: 4 },
+      IN: { x: -8, y: 0 },
+      JP: { x: 12, y: 0 },
+      BR: { x: 15, y: 0 },
+      AR: { x: -7, y: -8 },
+      RU: { x: 0, y: 18 },
+      AU: { x: 0, y: -8 },
+    };
+
+    svg.querySelectorAll("path[id]").forEach(country => {
+      const bounds = country.getBBox();
+      if (!bounds.width || !bounds.height) return;
+
+      if (visitedCountryCodes.has(country.id) && hasDesktopHover) {
+        country.addEventListener("click", () => removeVisitedCountry(country));
+      }
+
+      const isSmallCountry = bounds.width * bounds.height <= smallCountryAreaLimit;
+      if (isSmallCountry) {
+        if (hasDesktopHover) {
+          country.addEventListener("pointerenter", event => {
+            showCountryTooltip(country, event);
+          });
+          country.addEventListener("pointermove", positionCountryTooltip);
+          country.addEventListener("pointerleave", hideCountryTooltip);
+        }
+        return;
+      }
+
+      const label = document.createElementNS(svg.namespaceURI, "text");
+      const offset = labelOffsets[country.id] || { x: 0, y: 0 };
+      const centerX = bounds.x + bounds.width / 2 + offset.x;
+      const centerY = bounds.y + bounds.height / 2 + offset.y;
+      const fontSize = Math.max(4, Math.min(8, Math.min(bounds.width, bounds.height) * 0.6));
+
+      label.setAttribute("class", "country-label");
+      label.setAttribute("x", centerX);
+      label.setAttribute("y", centerY);
+      label.setAttribute("font-size", fontSize);
+      label.textContent = country.id;
+      labelLayer.appendChild(label);
+
+      if (hasDesktopHover) {
+        country.addEventListener("pointerenter", event => {
+          label.classList.add("is-visible");
+          if (visitedCountryCodes.has(country.id)) {
+            showCountryTooltip(country, event);
+          }
+        });
+        country.addEventListener("pointermove", event => {
+          if (visitedCountryCodes.has(country.id)) {
+            positionCountryTooltip(event);
+          }
+        });
+        country.addEventListener("pointerleave", () => {
+          label.classList.remove("is-visible");
+          hideCountryTooltip();
+        });
+      }
     });
   </script>
 </body>

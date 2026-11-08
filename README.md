@@ -12,6 +12,7 @@ Aplicação web para rastrear quais países cada membro da família já visitou.
 
 - Criar e alternar entre perfis de membros da família
 - Adicionar países à lista de visitados de cada membro
+- Remover países visitados clicando no país no mapa
 - Mapa-múndi visual com os países visitados destacados
 - Remover membros da família e seus registros
 
